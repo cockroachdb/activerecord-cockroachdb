@@ -20,6 +20,8 @@ module ActiveRecord
       module SchemaStatements
         include ActiveRecord::ConnectionAdapters::PostgreSQL::SchemaStatements
 
+        undef_method :reset_pk_sequence!
+
         # OVERRIDE: We do not want to see the crdb_internal schema in the names.
         #
         # Returns an array of schema names.
