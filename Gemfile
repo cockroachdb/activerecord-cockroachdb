@@ -58,6 +58,8 @@ group :development, :test do
   gem "minitest-github_action_reporter", github: "BuonOmo/minitest-github_action_reporter", require: "minitest/github_action_reporter_plugin"
   gem "ostruct", "~> 0.6"
 
+  gem "stackprof"
+
   # Gems used for tests meta-programming.
   gem "parser"
 
