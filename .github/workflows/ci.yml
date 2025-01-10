@@ -88,4 +88,16 @@ jobs:
           done
           cat ${{ github.workspace }}/setup.sql | cockroach sql --insecure
       - name: Test
-        run: bundle exec rake test TESTOPTS='--profile=5'
+        run: AR_LOG=summary bundle exec rake test TESTOPTS='--profile=5 --verbose'
+      - name: Upload queries file
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: query_time.json
+          path: tmp/query_time.json
+      - name: Upload stackprof dump
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: stackprof.dump
+          path: tmp/stackprof.dump

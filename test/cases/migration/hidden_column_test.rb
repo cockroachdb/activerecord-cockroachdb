@@ -62,7 +62,7 @@ module ActiveRecord
             CREATE INDEX hash_idx ON rockets (name) USING HASH WITH (bucket_count=8);
           SQL
           @connection.remove_index :rockets, :name
-          # assert :ok
+          assert :ok
         end
       end
     end

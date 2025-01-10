@@ -15,14 +15,6 @@ module CockroachDB
       @schema_migration.create_table
     end
 
-    def standard_dump
-      @@standard_dump ||= perform_schema_dump
-    end
-
-    def perform_schema_dump
-      dump_all_table_schema []
-    end
-
     # See https://github.com/cockroachdb/activerecord-cockroachdb-adapter/issues/347
     def test_dump_index_rather_than_unique_constraints
       ActiveRecord::Base.with_connection do |conn|
@@ -35,13 +27,9 @@ module CockroachDB
         end
       end
 
-      stream = StringIO.new
-      ActiveRecord::Base.connection_pool.with_connection do |conn|
-        dumper = conn.create_schema_dumper({})
-        dumper.send(:table, "payments", stream)
-      end
-      stream.rewind
-      index_lines = stream.each_line.select { _1[/simple_unique|unique_with_where|as_unique_constraint/] }
+      output = dump_table_schema("payments")
+
+      index_lines = output.each_line.select { _1[/simple_unique|unique_with_where|as_unique_constraint/] }
       assert_equal 2, index_lines.size
       index_lines.each do |line|
         assert_match(/t.index/, line)
@@ -69,7 +57,8 @@ module CockroachDB
         end
         migration.migrate(:up)
 
-        output = perform_schema_dump
+        output = dump_table_schema "timestamps"
+
         assert output.include?('t.datetime "this_should_remain_datetime"')
         assert output.include?('t.datetime "this_is_an_alias_of_datetime"')
         assert output.include?('t.timestamp "without_time_zone"')
@@ -97,7 +86,7 @@ module CockroachDB
         end
         migration.migrate(:up)
 
-        output = perform_schema_dump
+        output = dump_table_schema "timestamps"
         # Normally we'd write `t.datetime` here. But because you've changed the `datetime_type`
         # to something else, `t.datetime` now means `:timestamptz`. To ensure that old columns
         # are still created as a `:timestamp` we need to change what is written to the schema dump.
@@ -131,7 +120,7 @@ module CockroachDB
         end
         migration.migrate(:up)
 
-        output = perform_schema_dump
+        output = dump_table_schema "timestamps"
         # Normally we'd write `t.datetime` here. But because you've changed the `datetime_type`
         # to something else, `t.datetime` now means `:timestamptz`. To ensure that old columns
         # are still created as a `:timestamp` we need to change what is written to the schema dump.
@@ -166,7 +155,7 @@ module CockroachDB
         end
         migration.migrate(:up)
 
-        output = perform_schema_dump
+        output = dump_table_schema "timestamps"
         # Normally we'd write `t.datetime` here. But because you've changed the `datetime_type`
         # to something else, `t.datetime` now means `:timestamptz`. To ensure that old columns
         # are still created as a `:timestamp` we need to change what is written to the schema dump.
@@ -200,7 +189,7 @@ module CockroachDB
       end
       migration.migrate(:up)
 
-      output = perform_schema_dump
+      output = dump_table_schema "timestamps"
       assert output.include?('t.datetime "default_format"')
       assert output.include?('t.datetime "without_time_zone"')
       assert output.include?('t.timestamptz "with_time_zone"')
@@ -208,7 +197,7 @@ module CockroachDB
       datetime_type_was = ActiveRecord::ConnectionAdapters::CockroachDBAdapter.datetime_type
       ActiveRecord::ConnectionAdapters::CockroachDBAdapter.datetime_type = :timestamptz
 
-      output = perform_schema_dump
+      output = dump_table_schema "timestamps"
       assert output.include?('t.timestamp "default_format"')
       assert output.include?('t.timestamp "without_time_zone"')
       assert output.include?('t.datetime "with_time_zone"')

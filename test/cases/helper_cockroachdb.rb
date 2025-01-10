@@ -222,3 +222,7 @@ ActiveRecord::SchemaDumper.prepend(NoHeaderExt)
 class BaseCompatibilityTest < ActiveRecord::TestCase
   self.use_transactional_tests = false
 end
+
+require "stackprof"
+StackProf.start(mode: :wall, interval: 1000)
+Minitest.after_run { StackProf.stop; StackProf.results("tmp/stackprof.dump") }
